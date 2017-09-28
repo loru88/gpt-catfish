@@ -117,7 +117,6 @@ function googletagCatfish(gt) {
      *
      * @param {String} slot
      * @param {Array} size Array of with and height, as [width, height]
-     * @param {String} mode
      * @return {String}
      */
     function slotKey(slot, size) {
@@ -129,7 +128,7 @@ function googletagCatfish(gt) {
      * Add googletag slot
      *
      * @param {String} slot
-     * @param {Array} sizes Array of with and height, as [width, height]
+     * @param {Array} size Array of with and height, as [width, height]
      * @param {String} mode
      * @returns {Void}
      */
@@ -284,10 +283,10 @@ function googletagCatfish(gt) {
                         return;
                     }
 
-                    var renderedSlotKey = slotKey(event.slot['C'], event.size);
+                    var renderedSlotKey = slotKey(event.slot.getAdUnitPath(), event.size);
                     if (renderedSlotKey in SLOTS_MODES) {
                         var mode = SLOTS_MODES[renderedSlotKey];
-                        log('rendred slot ' + event.slot['C'] +
+                        log('rendered slot ' + event.slot.getAdUnitPath() +
                             ' size ' + event.size.join('x') +
                             ' mode ' + mode);
                         showAdsBox(mode);
