@@ -47,15 +47,15 @@ function googletagCatfish(gt) {
     /**
      * Create ads box element
      *
-     * @return {Void}
+     * @return {object}
      */
-    function createAdsBox() {
+    function createAdBox(slot) {
         adsBox = document.createElement('div');
         adsBox.className = 'gt-catfish-box';
 
         adsPlace = document.createElement('div');
         adsPlace.className = 'gt-catfish__place';
-        adsPlace.id = adsPlaceId;
+        adsPlace.id = slotId(slot);
 
         adsCloseButton = document.createElement('div');
         adsCloseButton.className = 'gt-catfish__button-close';
@@ -65,6 +65,7 @@ function googletagCatfish(gt) {
         adsBox.appendChild(adsPlace);
 
         document.body.appendChild(adsBox);
+        return adsBox;
     }
 
 
@@ -113,14 +114,13 @@ function googletagCatfish(gt) {
 
 
     /**
-     * Create slot string key
+     * Create HTML id for a slot from ad unit path
      *
-     * @param {String} slot
-     * @param {Array} size Array of with and height, as [width, height]
+     * @param {String} s
      * @return {String}
      */
-    function slotKey(slot, size) {
-        return slot + '-' + size.join('x');
+    function slotId(s) {
+        return s.replace(/\//gi,"-").substr(1);
     }
 
 
@@ -135,7 +135,7 @@ function googletagCatfish(gt) {
     function addSlot(slot, size, mode) {
         SLOTS[slot] = SLOTS[slot] || { sizes: [] };
         SLOTS[slot].sizes.push(size);
-        SLOTS_MODES[slotKey(slot, size)] = mode;
+        SLOTS_MODES[slot] = mode;
     }
 
 
@@ -147,7 +147,8 @@ function googletagCatfish(gt) {
     function initSlots() {
         gt.cmd.push(function() {
             for (var slot in SLOTS) {
-                gt.defineSlot(slot, SLOTS[slot].sizes, adsPlaceId).addService(gt.pubads());
+                SLOTS[slot].dom = createAdBox(slot);
+                gt.defineSlot(slot, SLOTS[slot].sizes, slotId(slot)).addService(gt.pubads());
             }
         });
     }
@@ -268,12 +269,9 @@ function googletagCatfish(gt) {
             initSlots();
 
             createAdsStyle();
-            createAdsBox();
+
 
             this.googletag().cmd.push((function() {
-
-                this.googletag().pubads().enableSingleRequest();
-                this.googletag().enableServices();
 
                 // add event to sign the slot as redered or not
                 this.googletag().pubads().addEventListener('slotRenderEnded', function (event) {
@@ -283,7 +281,7 @@ function googletagCatfish(gt) {
                         return;
                     }
 
-                    var renderedSlotKey = slotKey(event.slot.getAdUnitPath(), event.size);
+                    var renderedSlotKey = event.slot.getAdUnitPath();
                     if (renderedSlotKey in SLOTS_MODES) {
                         var mode = SLOTS_MODES[renderedSlotKey];
                         log('rendered slot ' + event.slot.getAdUnitPath() +
@@ -293,14 +291,22 @@ function googletagCatfish(gt) {
                     }
                 });
 
-                this.googletag().display(adsPlace);
+                this.googletag().pubads().enableSingleRequest();
+                this.googletag().pubads().collapseEmptyDivs();
+                this.googletag().enableServices();
+
+                for(var slot in SLOTS){
+                    this.googletag().display(slotId(slot));
+                }
 
             }).bind(this));
 
+            /* // TODO: should be set for each mode
             // Autoclose timeout
             if (autoCloseTimeout) {
                 setTimeout(hideAdsBox, autoCloseTimeout);
             }
+            */
 
             return this;
         }
